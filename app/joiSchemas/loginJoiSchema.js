@@ -1,10 +1,10 @@
 const Joi = require('joi');
 
-const loginSchema = Joi.object({
+const loginSchema = {
     body: {
-        email: Joi.String().email().required(),
+        email: Joi.string().email().required(),
         password: Joi.string().required()
     }
-});
+};
 
 module.exports = loginSchema;

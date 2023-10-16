@@ -13,7 +13,7 @@ const sessionSchema = new mongoose.Schema({
         type: String,
         required: true
     }
-});
+},{timestamps:true});
 
 const sessionModel = mongoose.model('session', sessionSchema);
 

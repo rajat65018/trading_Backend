@@ -1,8 +1,12 @@
-const Joi = requrie('joi');
-
-const updateJoiSchema = Joi.object({
-    name: Joi.string().requried(),
-    address: Joi.string().requried()
-});
+const Joi = require("joi");
+const updateJoiSchema = {
+  body: {
+    name: Joi.string(),
+    address: Joi.string(),
+  },
+  headers: {
+    authorization: Joi.string().required(),
+  },
+};
 
 module.exports = updateJoiSchema;

@@ -1,4 +1,6 @@
+const sessionModel = require("../models/sessionModel");
 const { findOneSession } = require("../services/sessoinService");
+const { userType } = require("../utils/constants");
 const {
   UNAUTHORIZED_USER,
   INTERNAL_SERVER_ERROR,
@@ -7,8 +9,12 @@ const {
 async function userAuthentication(req, res, next) {
   try {
     const token = req.headers.authorization;
-    const session = await findOneSession({ token: token, userType: "user" });
+    console.log(token,'token');
+    const session = await findOneSession({
+      token: token,
+    });
     req.body.session = session;
+    console.log(req.body.session,'session======');
     if (!session) {
       return res.status(401).json({ message: UNAUTHORIZED_USER });
     }
