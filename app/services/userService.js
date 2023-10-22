@@ -2,20 +2,20 @@ const userModel=require('../models/userModel');
 
 const userServices={};
 
-userServices.createUser=async(payload)=> {
+userServices.createUser = async(payload) => {
     return userModel(payload).save();
 }
 
-userServices.findOneUser=async(searchQuery)=> {
-    return await userModel.findOne(searchQuery);
+userServices.findOneUser = async(criteria) => {
+    return await userModel.findOne(criteria);
 }
 
-userServices.findOneAndUpdateUser=async(searchQuery,projectionQuery)=> {
-    return await userModel.findOneAndUpdate(searchQuery,projectionQuery);
+userServices.findOneAndUpdateUser = async(criteria,projectionQuery) => {
+    return await userModel.findOneAndUpdate(criteria,projectionQuery);
 }
 
-userServices.findOneAndDeleteUser=async(searchQuery)=> {
-    return await userModel.findOneAndDelete(searchQuery);
+userServices.findOneAndDeleteUser = async(criteria) => {
+    return await userModel.findOneAndDelete(criteria);
 }
 
 module.exports=userServices;

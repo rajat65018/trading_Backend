@@ -1,27 +1,26 @@
+const express = require('express');
 
-const express = require("express");
-const { signup, login, deleteUser, updateUser, changePassword, checkUserExist } = require("../controller/userController");
-const userAuthentication = require("../middleware/auth");
-const validateJoiSchema = require("../middleware/validateJoiSchema");
-const signupJoiSchema = require("../joiSchemas/signupJoiSchema");
-const deleteJoiSchema = require("../joiSchemas/deleteJoiSchema");
-const loginSchema = require("../joiSchemas/loginJoiSchema");
-const checkUserExistJoiSchema = require("../joiSchemas/checkUserExist");
-const updateJoiSchema = require("../joiSchemas/updateJoiSchema");
-const changePasswordJoiSchema = require("../joiSchemas/changePasswordJoiSchema");
+const joiSchema = require('../joiSchemas/joiSchema');
+const userAuthentication = require('../middleware/auth');
+const userController = require('../controller/userController');
+const validateJoiSchema = require('../middleware/validateJoiSchema');
 
 const userRoute = express.Router();
 
-userRoute.post("/v1/user/register", validateJoiSchema(signupJoiSchema),signup);
+userRoute.post('/v1/user/register', validateJoiSchema(joiSchema.signupSchema),userController.signup);
 
-userRoute.post("/login", validateJoiSchema(loginSchema),login);
+userRoute.post('/userController.login', validateJoiSchema(joiSchema.loginSchema), userController.login);
 
-userRoute.put("/user",validateJoiSchema(updateJoiSchema),userAuthentication, updateUser);
+userRoute.put('/user', validateJoiSchema(joiSchema.updateUserSchema), userAuthentication, userController.updateUser);
 
-userRoute.delete("/user", validateJoiSchema(deleteJoiSchema),userAuthentication, deleteUser);
+userRoute.delete('/user', validateJoiSchema(joiSchema.deleteUserSchema), userAuthentication, userController.deleteUser);
 
-userRoute.put('/changePassword',validateJoiSchema(changePasswordJoiSchema),userAuthentication,changePassword);
+userRoute.put('/changePassword', validateJoiSchema(joiSchema.changePasswordSchema), userAuthentication, userController.changePassword);
 
-userRoute.post('/v1/user/credentialValidate', validateJoiSchema(checkUserExistJoiSchema), checkUserExist)
+userRoute.put('/sendOtp', validateJoiSchema(joiSchema.sendOtpSchema), userAuthentication, userController.sendOtp );
+
+userRoute.get('/verifyOtp',validateJoiSchema(joiSchema.verifyOtpSchema), userAuthentication, userController.sendOtp);
+
+userRoute.post('/v1/user/credentialValidate', validateJoiSchema(joiSchema.checkUserExistSchema), userController.checkUserExist)
 
 module.exports = userRoute;

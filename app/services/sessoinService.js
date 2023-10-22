@@ -1,17 +1,21 @@
-const sessionModel = require("../models/sessionModel");
+const sessionModel = require('../models/sessionModel');
 
-const sessionService={};
+const sessionService = {};
 
-sessionService.createSession=async(session)=>{
-    return await sessionModel(session).save();
-}
+sessionService.createSession = async (session) => {
+  return await sessionModel(session).save();
+};
 
-sessionService.findOneSession=async(searchQuery,projectionQuery)=> {
-    return await sessionModel.findOne(searchQuery,projectionQuery);
-}
+sessionService.findOneSession = async (criteria, projectionQuery) => {
+  return await sessionModel.findOne(criteria, projectionQuery);
+};
 
-sessionService.findOneAndDeleteSession=async(searchQuery)=> {
-    return await sessionModel.findOneAndDelete(searchQuery);
-}
+sessionService.findOneAndDeleteSession = async (criteria) => {
+  return await sessionModel.findOneAndDelete(criteria);
+};
 
-module.exports=sessionService
+sessionService.findOneAndUpdateSession = async (criteria, updateQuery) => {
+  return await sessionModel.findOneAndUpdate(criteria, updateQuery);
+};
+
+module.exports = sessionService;
