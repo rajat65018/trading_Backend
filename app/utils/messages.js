@@ -7,6 +7,9 @@ const MESSAGES={
     INVALID_CREDENTIALS:"Invalid credentials",
     INVALID_PASSWORD:"Invalid password",
     PASSWORD_UPDATED_SUCCESSFULLY:"Password updated successfully",
+    OTP_SENT_SUCCESSFULLY:"Otp sent successfully",
+    INVALID_OTP:"Invalid Otp",
+    OTP_VERIFIED_SUCCESSFULLY:"Otp verified successfully",
 }
 
 module.exports=MESSAGES;

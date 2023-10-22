@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-// const nodemailer = require("nodemailer");
-const { SMTPMAIL, SMTPPASSWORD } = require("../../config");
+const nodemailer = require("nodemailer");
+const {  SMTP_MAIL, SMTP_PASSWORD } = require("../../config");
 const { SECRET_KEY, SALT_ROUND } = require("../../config");
 
 const helperFunction = {};
@@ -27,15 +27,16 @@ helperFunction.sendEmail = async (req, res) => {
     host: "smtp.gmail.com",
     port: 587,
     auth: {
-      user: SMTPMAIL,
-      pass: SMTPPASSWORD,
+      user:SMTP_MAIL,
+      pass:SMTP_PASSWORD
     },
   });
+  const data=req.body.data
   const sendMailOption = {
-    from: SMTPMAIL,
-    to: req.body.email,
-    subject: "otp",
-    text: generateOtp().toString(),
+    from: SMTP_MAIL,
+    to: data.email,
+    subject: data.subject,
+    text: data.message,
   };
   await transporter.sendMail(sendMailOption, function (error, info) {
     if (error) {
@@ -48,7 +49,7 @@ helperFunction.sendEmail = async (req, res) => {
 };
 
 helperFunction.generateOtp = () => {
-  return Math.random();
+  return Math.floor(100000 + Math.random() * 900000);
 };
 
 module.exports = helperFunction;
