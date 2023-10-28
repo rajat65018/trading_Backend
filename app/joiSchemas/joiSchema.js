@@ -4,11 +4,16 @@ const joiSchema = {};
 
 joiSchema.changePasswordSchema = {
     body: {
-        currentPassword: Joi.string().required(),
         newPassword: Joi.string().min(8).max(20).required()
     },
     headers: {
         authorization: Joi.string().required()
+    }
+};
+
+joiSchema.passwordForgotSchema = {
+    body: {
+        email: Joi.string().email().required()
     }
 };
 
@@ -47,6 +52,7 @@ joiSchema.signupSchema = {
         mobile: Joi.string().required(),
         dob: Joi.date().required(),
         addressLine1: Joi.string().required(),
+        county: Joi.string().required(),
         state: Joi.string().required(),
         city: Joi.string().required(),
         postalCode: Joi.number().required(),
@@ -61,6 +67,7 @@ joiSchema.updateUserSchema = {
         mobile: Joi.string().optional(),
         dob: Joi.date().optional(),
         addressLine1: Joi.string().optional(),
+        county: Joi.string().required(),
         state: Joi.string().optional(),
         city: Joi.string().optional(),
         postalCode: Joi.number().optional()
@@ -70,12 +77,16 @@ joiSchema.updateUserSchema = {
     }
 };
 
-joiSchema.verifyOtpSchema = {
-    body: {
-        otp: Joi.number().required(),
-    },
+joiSchema.getUserSchema = {
     headers: {
         authorization: Joi.string().required()
+    }
+};
+
+joiSchema.verifyOtpSchema = {
+    body: {
+        email: Joi.string().email().required(),
+        otp: Joi.number().required(),
     }
 };
 

@@ -22,12 +22,13 @@ userController.signup = async (req, res) => {
     user = await userService.createUser(payload);
 
     const token = commonFunction.generateOtp();
-    await sessionService.createSession({ userId: user._id, token: token, tokenType: CONSTANTS.tokenType.OTP });
+
+	await sessionService.createSession({ userId: user._id, token, tokenType: CONSTANTS.TOKEN_TYPE.OTP });
 
     res.status(200).json(createSuccessResponse(MESSAGE.OTP_SENT_SUCCESSFULLY));
   } catch (error) {
     console.log(error);
-    res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR));
+    res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
   }
 };
 
@@ -41,7 +42,7 @@ userController.checkUserExist = async (req, res) => {
       res.status(200).json(createSuccessResponse(MESSAGE.SUCCESS, { email: !!isEmailExist, mobile: !!isMobileExist }));
     } catch (error) {
       console.log(error);
-      res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR));
+      res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
     }
 };
 
@@ -51,132 +52,171 @@ userController.login = async (req, res) => {
 
     const user = await userService.findOneUser({ email: payload?.email, isDeleted: { $ne: true }});
     if (!user) {
-      return res.status(401).json(createErrorResponse(MESSAGE.USER_NOT_FOUND));
+      return res.status(401).json(createErrorResponse(MESSAGE.USER_NOT_FOUND, CONSTANTS.ERROR_TYPES.DATA_NOT_FOUND));
     }
 
     const password = await bcrypt.compare(payload.password, user.password);
     if (!password) {
-		return res.status(401).json(createErrorResponse(MESSAGE.INVALID_CREDENTIALS));
+		return res.status(401).json(createErrorResponse(MESSAGE.INVALID_CREDENTIALS, CONSTANTS.ERROR_TYPES.BAD_REQUEST));
     }
-    const session = await sessionService.findOneSession({ userId: user._id });
 
-    res.status(200).json(createSuccessResponse(MESSAGE.USER_LOGIN_SUCCESSFULLY, { user, session }));
+	let token = commonFunction.generateToken({ userId: user._id });
+	await sessionService.createSession({ userId: user._id, token: token, tokenType: CONSTANTS.TOKEN_TYPE.LOGIN });
+
+    return res.status(200).json(createSuccessResponse(MESSAGE.USER_LOGIN_SUCCESSFULLY, { user, token }));
   } catch (error) {
     console.log(error, 'error');
-    res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR));
+    return res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
   }
 };
 
 userController.updateUser = async (req, res) => {
-  try {
+	try {
 
-    let user = await userService.findOneAndUpdateUser({ _id: req.body.session.userId, isDeleted: { $ne: true }}, req.body, { new: true });
+		let user = await userService.findOneAndUpdateUser({ _id: req.user._id, isDeleted: { $ne: true }}, req.body, { new: true });
 
-    return res.status(200).json(createSuccessResponse(MESSAGE.USER_DATA_UPDATED, user));
-  } catch (error) {
-    console.log(error, 'error');
-    res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR));
-  }
+		return res.status(200).json(createSuccessResponse(MESSAGE.USER_DATA_UPDATED, user));
+	} catch (error) {
+		console.log(error, 'error');
+		return res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
+	}
+};
+
+userController.getUser = async (req, res) => {
+	try {
+  
+	  return res.status(200).json(createSuccessResponse(MESSAGE.USER_PROFILE_FETCHED, req.user));
+	} catch (error) {
+	  console.log(error, 'error');
+	  return res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
+	}
 };
 
 userController.deleteUser = async (req, res) => {
   try {
-    const userId = req.body.session.userId;
+    const userId = req.user._id;
 
     await userService.findOneAndUpdateUser({ _id: userId, isDeleted: { $ne: true } }, { $set: { isDeleted: true } });
     await sessionService.findOneAndDeleteSession({ userId: userId });
 
-    res.status(200).json(createSuccessResponse(MESSAGE.USER_DELETED_SUCCESSFULLY));
+    return res.status(200).json(createSuccessResponse(MESSAGE.USER_DELETED_SUCCESSFULLY));
   } catch (error) {
-    res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR));
+    return res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
   }
 };
 
 userController.changePassword = async (req, res) => {
   try {
-    const userId = req.body.session.userId;
+    const userId = req.user._id;
     let newPassword = req.body.newPassword;
-    const currentPassword = req.body.currentPassword;
-    const user = await userService.findOneUser({ _id: userId });
-    if (!(await commonFunction.compareHash(currentPassword, user.password))) {
-      return res.status(401).json({ message: MESSAGE.INVALID_PASSWORD });
-    }
 
     newPassword = await commonFunction.generateHash(req.body.newPassword);
-    await userService.findOneAndUpdateUser(
-      { _id: userId },
-      {
-        $set: {
-          password: newPassword,
-        },
-      }
-    );
-    res.status(200).json({ message: MESSAGE.PASSWORD_UPDATED_SUCCESSFULLY });
+    await userService.findOneAndUpdateUser({ _id: userId }, { $set: { password: newPassword } });
+
+    return res.status(200).json(createSuccessResponse(MESSAGE.PASSWORD_UPDATED_SUCCESSFULLY));
   } catch (error) {
     console.log(error, 'error');
-    res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR));
+    return res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
+  }
+};
+
+userController.forgotPassword = async (req, res) => {
+  try {
+
+    const user = await userService.findOneUser({ email: req.body.email, isDeleted: { $ne: true }, isVerified: true });
+    if (!user) {
+      return res.status(404).json(createErrorResponse(MESSAGE.USER_NOT_FOUND, CONSTANTS.ERROR_TYPES.DATA_NOT_FOUND));
+    }
+
+	let otp = commonFunction.generateOtp();
+	await sessionService.findOneAndUpdateSession({ userId: user._id }, { $set: { token: otp, tokenType: CONSTANTS.TOKEN_TYPE.OTP } }, { upsert: true })
+
+    return res.status(200).json(createSuccessResponse(MESSAGE.OTP_SENT_SUCCESSFULLY));
+  } catch (error) {
+    console.log(error, 'error');
+    return res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
   }
 };
 
 userController.sendOtp = async (req, res) => {
-  try {
-    const email = req.body.email;
-    const otp = commonFunction.generateOtp();
-    const token = commonFunction.generateToken({ otp: otp });
-    const session = req.body.session;
-    const otpTokenExist = await sessionService.findOneSession({ userId: session.userId, tokenType: CONSTANTS.tokenType.OTP });
-    if (otpTokenExist) {
-      await sessionService.findOneAndUpdateSession(
-        { userId: session.userId, tokenType: CONSTANTS.tokenType.OTP },
-        {
-          $set: {
-            token: token,
-          },
-        }
-      );
-    } else {
-      await sessionService.createSession({ userId: session.userId, token: token, tokenType: CONSTANTS.tokenType.OTP });
-    }
-    const data = { email: email, subject: 'Otp for the email verification', message: `Your Otp for the email verification is ${otp}` };
-    req.body.data = data;
-    await commonFunction.sendEmail(req, res);
-    // await sessionService.createSession(sessionObj);
-    res.status(200).json({ message: MESSAGE.OTP_SENT_SUCCESSFULLY });
-  } catch (error) {
-    console.log(error, 'eroro');
-    res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR));
-  }
+	try {
+		const email = req.body.email;
+		const otp = commonFunction.generateOtp();
+		const token = commonFunction.generateToken({ otp: otp });
+		const userDetails = req.user;
+		const otpTokenExist = await sessionService.findOneSession({ userId: userDetails._id, tokenType: CONSTANTS.TOKEN_TYPE.OTP });
+		if (otpTokenExist) {
+			await sessionService.findOneAndUpdateSession(
+				{ userId: userDetails._id, tokenType: CONSTANTS.TOKEN_TYPE.OTP },
+				{ $set: { token: token } }
+			);
+		} else {
+			await sessionService.createSession({ userId: userDetails._id, token: token, tokenType: CONSTANTS.TOKEN_TYPE.OTP });
+		}
+		const data = { email: email, subject: 'Otp for the email verification', message: `Your Otp for the email verification is ${otp}` };
+		req.body.data = data;
+		await commonFunction.sendEmail(req, res);
+		// await sessionService.createSession(sessionObj);
+		return res.status(200).json({ message: MESSAGE.OTP_SENT_SUCCESSFULLY });
+	} catch (error) {
+		console.log(error, 'eroro');
+		return res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
+	}
+};
+
+userController.verifyUser = async (req, res) => {
+	try {
+
+		let user = await userService.findOneUser({ email: req.body.email, isDeleted: { $ne: true } });
+		if (!user) {
+			return res.status(400).json(createErrorResponse(MESSAGE.USER_NOT_FOUND, CONSTANTS.ERROR_TYPES.DATA_NOT_FOUND));
+		} else if (user.isVerified) {
+			return res.status(400).json(createErrorResponse(MESSAGE.USER_ALREADY_VERIFIED, CONSTANTS.ERROR_TYPES.BAD_REQUEST));
+		}
+
+		const otpToken = await sessionService.findOneSession({ userId: user._id, tokenType: CONSTANTS.TOKEN_TYPE.OTP });
+		if (!otpToken) {
+			return res.status(400).json(createErrorResponse(MESSAGE.INVALID_OTP, CONSTANTS.ERROR_TYPES.DATA_NOT_FOUND));
+		}
+
+		if (req.body.otp !== otpToken.token) {
+			return res.status(400).json(createErrorResponse(MESSAGE.INVALID_OTP, CONSTANTS.ERROR_TYPES.BAD_REQUEST));
+		}
+
+		await userService.findOneAndUpdateUser({ _id: user._id }, { $set: { isVerified: true } }, { new: true });
+
+		return res.status(200).json(createSuccessResponse(MESSAGE.OTP_VERIFIED_SUCCESSFULLY));
+	} catch (error) {
+		console.log(error);
+		return res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
+	}
 };
 
 userController.verifyOtp = async (req, res) => {
-  try {
-    const otp = req.body.otp;
-    const userId = req.body.session.userId;
-    const otpToken = await sessionService.findOneSession({
-      userId: userId,
-      tokenType: CONSTANTS.tokenType.OTP,
-    });
-    if (!otpToken) {
-      res.status(400).json({ message: MESSAGE.INVALID_OTP });
-    } else {
-      const decryptOtp = await commonFunction.decryptToken(otpToken.token);
+	try {
 
-      if (otp == decryptOtp.otp) {
-        await userService.findOneAndUpdateUser(
-          { _id: userId },
-          {
-            $set: { isVerified: true },
-          }
-        );
-        res.status(200).json({ message: MESSAGE.OTP_VERIFIED_SUCCESSFULLY });
-      } else {
-        res.status(400).json({ message: MESSAGE.INVALID_OTP });
-      }
-    }
-  } catch (error) {
-    console.log(error);
-    res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR));
-  }
+		let user = await userService.findOneUser({ email: req.body.email, isDeleted: { $ne: true }, isVerified: true });
+		if (!user) {
+			return res.status(400).json(createErrorResponse(MESSAGE.USER_NOT_FOUND, CONSTANTS.ERROR_TYPES.DATA_NOT_FOUND));
+		}
+
+		const otpToken = await sessionService.findOneSession({ userId: user._id, tokenType: CONSTANTS.TOKEN_TYPE.OTP });
+		if (!otpToken) {
+			return res.status(400).json(createErrorResponse(MESSAGE.INVALID_OTP, CONSTANTS.ERROR_TYPES.DATA_NOT_FOUND));
+		}
+
+		if (req.body.otp !== otpToken.token) {
+			return res.status(400).json(createErrorResponse(MESSAGE.INVALID_OTP, CONSTANTS.ERROR_TYPES.BAD_REQUEST));
+		}
+
+		let token = commonFunction.generateToken({ userId: user._id });
+		await sessionService.findOneAndUpdateSession({ userId: user._id }, { $set: { token, tokenType: CONSTANTS.TOKEN_TYPE.LOGIN } }, { upsert: true });
+
+		return res.status(200).json(createSuccessResponse(MESSAGE.OTP_VERIFIED_SUCCESSFULLY, { token }));
+	} catch (error) {
+		console.log(error);
+		return res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
+	}
 };
 
 module.exports = userController;

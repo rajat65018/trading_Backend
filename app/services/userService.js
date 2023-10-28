@@ -6,8 +6,8 @@ userServices.createUser = async(payload) => {
     return userModel(payload).save();
 }
 
-userServices.findOneUser = async(criteria) => {
-    return await userModel.findOne(criteria);
+userServices.findOneUser = async(criteria, projection) => {
+    return await userModel.findOne(criteria, projection).lean();
 }
 
 userServices.findOneAndUpdateUser = async(criteria,projectionQuery) => {

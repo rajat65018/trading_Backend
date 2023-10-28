@@ -14,8 +14,8 @@ sessionService.findOneAndDeleteSession = async (criteria) => {
   return await sessionModel.findOneAndDelete(criteria);
 };
 
-sessionService.findOneAndUpdateSession = async (criteria, updateQuery) => {
-  return await sessionModel.findOneAndUpdate(criteria, updateQuery);
+sessionService.findOneAndUpdateSession = async (criteria, updateQuery, projection) => {
+  return await sessionModel.findOneAndUpdate(criteria, updateQuery, projection);
 };
 
 module.exports = sessionService;
