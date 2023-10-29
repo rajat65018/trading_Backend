@@ -11,4 +11,6 @@ module.exports = {
   },
   SECRET_KEY: process.env.SECRET_KEY || 'test',
   SALT_ROUND: process.env.SALT_ROUND || 8,
+  SMTP_MAIL:process.env.SMTP_MAIL,
+  SMTP_PASSWORD:process.env.SMTP_PASSWORD,
 };

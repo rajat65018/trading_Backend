@@ -52,7 +52,7 @@ joiSchema.signupSchema = {
         mobile: Joi.string().required(),
         dob: Joi.date().required(),
         addressLine1: Joi.string().required(),
-        county: Joi.string().required(),
+        country: Joi.string().required(),
         state: Joi.string().required(),
         city: Joi.string().required(),
         postalCode: Joi.number().required(),

@@ -24,6 +24,9 @@ userController.signup = async (req, res) => {
     const token = commonFunction.generateOtp();
 
 	await sessionService.createSession({ userId: user._id, token, tokenType: CONSTANTS.TOKEN_TYPE.OTP });
+	const data = { email: user.email, subject: 'Otp for the email verification', message: `Your Otp for the email verification is ${token}` };
+	req.body.data = data;
+	await commonFunction.sendEmail(req, res);
 
     res.status(200).json(createSuccessResponse(MESSAGE.OTP_SENT_SUCCESSFULLY));
   } catch (error) {
@@ -63,6 +66,8 @@ userController.login = async (req, res) => {
 	let token = commonFunction.generateToken({ userId: user._id });
 	await sessionService.createSession({ userId: user._id, token: token, tokenType: CONSTANTS.TOKEN_TYPE.LOGIN });
 
+	delete user.password
+	
     return res.status(200).json(createSuccessResponse(MESSAGE.USER_LOGIN_SUCCESSFULLY, { user, token }));
   } catch (error) {
     console.log(error, 'error');
@@ -175,11 +180,13 @@ userController.verifyUser = async (req, res) => {
 		}
 
 		const otpToken = await sessionService.findOneSession({ userId: user._id, tokenType: CONSTANTS.TOKEN_TYPE.OTP });
+		console.log(otpToken,'otpToken=====');
+		console.log(req.body.otp,'req.body.epot')
 		if (!otpToken) {
 			return res.status(400).json(createErrorResponse(MESSAGE.INVALID_OTP, CONSTANTS.ERROR_TYPES.DATA_NOT_FOUND));
 		}
 
-		if (req.body.otp !== otpToken.token) {
+		if (req.body.otp.toString() !== otpToken.token.toString()) {
 			return res.status(400).json(createErrorResponse(MESSAGE.INVALID_OTP, CONSTANTS.ERROR_TYPES.BAD_REQUEST));
 		}
 
@@ -195,6 +202,7 @@ userController.verifyUser = async (req, res) => {
 userController.verifyOtp = async (req, res) => {
 	try {
 
+		console.log(req.body.email,'req.body.email');
 		let user = await userService.findOneUser({ email: req.body.email, isDeleted: { $ne: true }, isVerified: true });
 		if (!user) {
 			return res.status(400).json(createErrorResponse(MESSAGE.USER_NOT_FOUND, CONSTANTS.ERROR_TYPES.DATA_NOT_FOUND));
