@@ -11,13 +11,13 @@ userRoute.post('/v1/user/register', validateJoiSchema(joiSchema.signupSchema),us
 
 userRoute.post('/v1/user/login', validateJoiSchema(joiSchema.loginSchema), userController.login);
 
-userRoute.put('/user', validateJoiSchema(joiSchema.updateUserSchema), userAuthentication, userController.updateUser);
+userRoute.put('/v1/user/update', validateJoiSchema(joiSchema.updateUserSchema), userAuthentication, userController.updateUser);
 
 userRoute.get('/v1/user', validateJoiSchema(joiSchema.getUserSchema), userAuthentication, userController.getUser);
 
 userRoute.delete('/user', validateJoiSchema(joiSchema.deleteUserSchema), userAuthentication, userController.deleteUser);
 
-userRoute.put('/changePassword', validateJoiSchema(joiSchema.changePasswordSchema), userAuthentication, userController.changePassword);
+userRoute.put('/v1/user/password/change', validateJoiSchema(joiSchema.changePasswordSchema), userAuthentication, userController.changePassword);
 
 userRoute.put('/v1/user/password/reset', validateJoiSchema(joiSchema.changePasswordSchema), userAuthentication, userController.changePassword);
 

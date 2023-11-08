@@ -6,13 +6,13 @@ const userSchema = new mongoose.Schema({
     email: { type: String, required: true },
     mobile: { type: String, required: true },
     password: { type: String, required: true },
-    dob: { type: Date, required: true },
+    dob: { type: Date },
     isVerified: { type: Boolean, default: false },
-    state: { type: String, required: true },
-    country: { type: String, required: true },
-    addressLine1: { type: String, required: true },
-    city: { type: String, required: true },
-    postalCode: { type: Number, required: true },
+    state: { type: String },
+    country: { type: String },
+    addressLine1: { type: String },
+    city: { type: String },
+    postalCode: { type: Number },
     isDeleted: { type: Boolean }
 }, { timestamps: true });
 

@@ -50,12 +50,12 @@ joiSchema.signupSchema = {
         lastName: Joi.string().required(),
         email: Joi.string().email().required(),
         mobile: Joi.string().required(),
-        dob: Joi.date().required(),
-        addressLine1: Joi.string().required(),
-        country: Joi.string().required(),
-        state: Joi.string().required(),
-        city: Joi.string().required(),
-        postalCode: Joi.number().required(),
+        // dob: Joi.date().required(),
+        // addressLine1: Joi.string().required(),
+        // country: Joi.string().required(),
+        // state: Joi.string().required(),
+        // city: Joi.string().required(),
+        // postalCode: Joi.number().required(),
         password: Joi.string().min(8).max(20).required()
     }
 };

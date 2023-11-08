@@ -111,19 +111,25 @@ userController.deleteUser = async (req, res) => {
 };
 
 userController.changePassword = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    let newPassword = req.body.newPassword;
-
-    newPassword = await commonFunction.generateHash(req.body.newPassword);
-    await userService.findOneAndUpdateUser({ _id: userId }, { $set: { password: newPassword } });
-
-    return res.status(200).json(createSuccessResponse(MESSAGE.PASSWORD_UPDATED_SUCCESSFULLY));
-  } catch (error) {
-    console.log(error, 'error');
-    return res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
-  }
-};
+	try {
+	  const userId = req.user._id;
+	  let oldPassword = req.body.oldPassword;
+	  let newPassword = req.body.newPassword;
+  
+	  let user = await userService.findOneUser({ _id: userId });
+	  if (!bcrypt.compare(oldPassword, user.password)) {
+		  return res.status(400).json(createErrorResponse(MESSAGE.OLD_PASSWORD_NOT_MATCHED, CONSTANTS.ERROR_TYPES.BAD_REQUEST));
+	  }
+  
+	  newPassword = await commonFunction.generateHash(req.body.newPassword);
+	  await userService.findOneAndUpdateUser({ _id: userId }, { $set: { password: newPassword } });
+  
+	  return res.status(200).json(createSuccessResponse(MESSAGE.PASSWORD_UPDATED_SUCCESSFULLY));
+	} catch (error) {
+	  console.log(error, 'error');
+	  return res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
+	}
+  };	
 
 userController.forgotPassword = async (req, res) => {
   try {
@@ -136,6 +142,9 @@ userController.forgotPassword = async (req, res) => {
 	let otp = commonFunction.generateOtp();
 	await sessionService.findOneAndUpdateSession({ userId: user._id }, { $set: { token: otp, tokenType: CONSTANTS.TOKEN_TYPE.OTP } }, { upsert: true })
 
+	const data = { email: user.email, subject: 'Otp for the email verification', message: `Your Otp for the email verification is ${otp}` };
+	req.body.data = data;
+	await commonFunction.sendEmail(req, res);
     return res.status(200).json(createSuccessResponse(MESSAGE.OTP_SENT_SUCCESSFULLY));
   } catch (error) {
     console.log(error, 'error');
@@ -180,13 +189,11 @@ userController.verifyUser = async (req, res) => {
 		}
 
 		const otpToken = await sessionService.findOneSession({ userId: user._id, tokenType: CONSTANTS.TOKEN_TYPE.OTP });
-		console.log(otpToken,'otpToken=====');
-		console.log(req.body.otp,'req.body.epot')
 		if (!otpToken) {
 			return res.status(400).json(createErrorResponse(MESSAGE.INVALID_OTP, CONSTANTS.ERROR_TYPES.DATA_NOT_FOUND));
 		}
 
-		if (req.body.otp.toString() !== otpToken.token.toString()) {
+		if (req.body.otp !== otpToken.token) {
 			return res.status(400).json(createErrorResponse(MESSAGE.INVALID_OTP, CONSTANTS.ERROR_TYPES.BAD_REQUEST));
 		}
 
@@ -202,7 +209,6 @@ userController.verifyUser = async (req, res) => {
 userController.verifyOtp = async (req, res) => {
 	try {
 
-		console.log(req.body.email,'req.body.email');
 		let user = await userService.findOneUser({ email: req.body.email, isDeleted: { $ne: true }, isVerified: true });
 		if (!user) {
 			return res.status(400).json(createErrorResponse(MESSAGE.USER_NOT_FOUND, CONSTANTS.ERROR_TYPES.DATA_NOT_FOUND));
