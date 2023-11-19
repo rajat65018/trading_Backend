@@ -2,8 +2,15 @@ const Joi = require('joi');
 
 const joiSchema = {};
 
+joiSchema.resetPassword={
+    body:{
+        newPassword:Joi.string().min(8).max(20)
+    }
+}
+
 joiSchema.changePasswordSchema = {
     body: {
+        oldPassword:Joi.string().min(8).max(20).required(),
         newPassword: Joi.string().min(8).max(20).required()
     },
     headers: {

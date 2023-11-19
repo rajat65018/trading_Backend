@@ -6,79 +6,80 @@ const userService = require('../services/userService');
 const commonFunction = require('../utils/commonFunction');
 const sessionService = require('../services/sessoinService');
 const { createSuccessResponse, createErrorResponse } = require('../helpers/resHelper');
+const MESSAGES = require('../utils/messages');
 
 const userController = {};
 
 userController.signup = async (req, res) => {
-  try {
-    const payload = req.body;
+	try {
+		const payload = req.body;
 
-    let user = await userService.findOneUser({ email: payload.email, isDeleted: { $ne: true }});
-    if (user) {
-      return res.status(400).json({ message: MESSAGE.USER_ALREADY_EXIST });
-    }
+		let user = await userService.findOneUser({ email: payload.email, isDeleted: { $ne: true } });
+		if (user) {
+			return res.status(400).json({ message: MESSAGE.USER_ALREADY_EXIST });
+		}
 
-    payload.password = await commonFunction.generateHash(payload.password);
-    user = await userService.createUser(payload);
+		payload.password = await commonFunction.generateHash(payload.password);
+		user = await userService.createUser(payload);
 
-    const token = commonFunction.generateOtp();
+		const token = commonFunction.generateOtp();
 
-	await sessionService.createSession({ userId: user._id, token, tokenType: CONSTANTS.TOKEN_TYPE.OTP });
-	const data = { email: user.email, subject: 'Otp for the email verification', message: `Your Otp for the email verification is ${token}` };
-	req.body.data = data;
-	await commonFunction.sendEmail(req, res);
+		await sessionService.createSession({ userId: user._id, token, tokenType: CONSTANTS.TOKEN_TYPE.OTP });
+		const data = { email: user.email, subject: 'Otp for the email verification', message: `Your Otp for the email verification is ${token}` };
+		req.body.data = data;
+		await commonFunction.sendEmail(req, res);
 
-    res.status(200).json(createSuccessResponse(MESSAGE.OTP_SENT_SUCCESSFULLY));
-  } catch (error) {
-    console.log(error);
-    res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
-  }
+		res.status(200).json(createSuccessResponse(MESSAGE.OTP_SENT_SUCCESSFULLY));
+	} catch (error) {
+		console.log(error);
+		res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
+	}
 };
 
 userController.checkUserExist = async (req, res) => {
-    try {
-      const payload = req.body;
+	try {
+		const payload = req.body;
 
-      let isEmailExist = await userService.findOneUser({ email: payload.email, isDeleted: { $ne: true } });
-      let isMobileExist = await userService.findOneUser({ mobile: payload.mobile, isDeleted: { $ne: true } });
-      
-      res.status(200).json(createSuccessResponse(MESSAGE.SUCCESS, { email: !!isEmailExist, mobile: !!isMobileExist }));
-    } catch (error) {
-      console.log(error);
-      res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
-    }
+		let isEmailExist = await userService.findOneUser({ email: payload.email, isDeleted: { $ne: true } });
+		let isMobileExist = await userService.findOneUser({ mobile: payload.mobile, isDeleted: { $ne: true } });
+
+		res.status(200).json(createSuccessResponse(MESSAGE.SUCCESS, { email: !!isEmailExist, mobile: !!isMobileExist }));
+	} catch (error) {
+		console.log(error);
+		res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
+	}
 };
 
 userController.login = async (req, res) => {
-  try {
-    const payload = req.body;
+	try {
+		const payload = req.body;
 
-    const user = await userService.findOneUser({ email: payload?.email, isDeleted: { $ne: true }});
-    if (!user) {
-      return res.status(401).json(createErrorResponse(MESSAGE.USER_NOT_FOUND, CONSTANTS.ERROR_TYPES.DATA_NOT_FOUND));
-    }
+		const user = await userService.findOneUser({ email: payload?.email, isDeleted: { $ne: true } });
+		if (!user) {
+			return res.status(401).json(createErrorResponse(MESSAGE.USER_NOT_FOUND, CONSTANTS.ERROR_TYPES.DATA_NOT_FOUND));
+		}
 
-    const password = await bcrypt.compare(payload.password, user.password);
-    if (!password) {
-		return res.status(401).json(createErrorResponse(MESSAGE.INVALID_CREDENTIALS, CONSTANTS.ERROR_TYPES.BAD_REQUEST));
-    }
+		const password = await bcrypt.compare(payload.password, user.password);
+		if (!password) {
+			return res.status(401).json(createErrorResponse(MESSAGE.INVALID_CREDENTIALS, CONSTANTS.ERROR_TYPES.BAD_REQUEST));
+		}
 
-	let token = commonFunction.generateToken({ userId: user._id });
-	await sessionService.createSession({ userId: user._id, token: token, tokenType: CONSTANTS.TOKEN_TYPE.LOGIN });
+		let token = commonFunction.generateToken({ userId: user._id });
+		await sessionService.createSession({ userId: user._id, token: token, tokenType: CONSTANTS.TOKEN_TYPE.LOGIN });
 
-	delete user.password
-	
-    return res.status(200).json(createSuccessResponse(MESSAGE.USER_LOGIN_SUCCESSFULLY, { user, token }));
-  } catch (error) {
-    console.log(error, 'error');
-    return res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
-  }
+		delete user.password
+
+		return res.status(200).json(createSuccessResponse(MESSAGE.USER_LOGIN_SUCCESSFULLY, { user, token }));
+	} catch (error) {
+		console.log(error, 'error');
+		return res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
+	}
 };
 
 userController.updateUser = async (req, res) => {
 	try {
 
-		let user = await userService.findOneAndUpdateUser({ _id: req.user._id, isDeleted: { $ne: true }}, req.body, { new: true });
+		let user = await userService.findOneAndUpdateUser({ _id: req.user._id, isDeleted: { $ne: true } }, req.body, { new: true });
 
 		return res.status(200).json(createSuccessResponse(MESSAGE.USER_DATA_UPDATED, user));
 	} catch (error) {
@@ -89,67 +90,90 @@ userController.updateUser = async (req, res) => {
 
 userController.getUser = async (req, res) => {
 	try {
-  
-	  return res.status(200).json(createSuccessResponse(MESSAGE.USER_PROFILE_FETCHED, req.user));
+
+		return res.status(200).json(createSuccessResponse(MESSAGE.USER_PROFILE_FETCHED, req.user));
 	} catch (error) {
-	  console.log(error, 'error');
-	  return res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
+		console.log(error, 'error');
+		return res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
 	}
 };
 
 userController.deleteUser = async (req, res) => {
-  try {
-    const userId = req.user._id;
+	try {
+		const userId = req.user._id;
 
-    await userService.findOneAndUpdateUser({ _id: userId, isDeleted: { $ne: true } }, { $set: { isDeleted: true } });
-    await sessionService.findOneAndDeleteSession({ userId: userId });
+		await userService.findOneAndUpdateUser({ _id: userId, isDeleted: { $ne: true } }, { $set: { isDeleted: true } });
+		await sessionService.findOneAndDeleteSession({ userId: userId });
 
-    return res.status(200).json(createSuccessResponse(MESSAGE.USER_DELETED_SUCCESSFULLY));
-  } catch (error) {
-    return res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
-  }
+		return res.status(200).json(createSuccessResponse(MESSAGE.USER_DELETED_SUCCESSFULLY));
+	} catch (error) {
+		return res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
+	}
 };
 
 userController.changePassword = async (req, res) => {
 	try {
-	  const userId = req.user._id;
-	  let oldPassword = req.body.oldPassword;
-	  let newPassword = req.body.newPassword;
-  
-	  let user = await userService.findOneUser({ _id: userId });
-	  if (!bcrypt.compare(oldPassword, user.password)) {
-		  return res.status(400).json(createErrorResponse(MESSAGE.OLD_PASSWORD_NOT_MATCHED, CONSTANTS.ERROR_TYPES.BAD_REQUEST));
-	  }
-  
-	  newPassword = await commonFunction.generateHash(req.body.newPassword);
-	  await userService.findOneAndUpdateUser({ _id: userId }, { $set: { password: newPassword } });
-  
-	  return res.status(200).json(createSuccessResponse(MESSAGE.PASSWORD_UPDATED_SUCCESSFULLY));
+		const userId = req.user._id;
+		let oldPassword = req.body.oldPassword;
+		let newPassword = req.body.newPassword;
+
+		let user = await userService.findOneUser({ _id: userId });
+		const password = await bcrypt.compare(oldPassword, user.password)
+		console.log('hello');
+		console.log(password, 'passwordpassword');
+		if (!password) {
+			return res.status(400).json(createErrorResponse(MESSAGE.OLD_PASSWORD_NOT_MATCHED, CONSTANTS.ERROR_TYPES.BAD_REQUEST));
+		}
+
+		newPassword = await commonFunction.generateHash(req.body.newPassword);
+		await userService.findOneAndUpdateUser({ _id: userId }, { $set: { password: newPassword } });
+
+		return res.status(200).json(createSuccessResponse(MESSAGE.PASSWORD_UPDATED_SUCCESSFULLY));
 	} catch (error) {
-	  console.log(error, 'error');
-	  return res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
+		console.log(error, 'error');
+		return res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
 	}
-  };	
+};
+
+userController.resetPassword = async (req, res) => {
+	try {
+		const userId = req.user._id;
+		const user = await userService.findOneUser({ _id: userId, isDeleted: { $ne: true }, isVerified: true });
+
+		if (!user) {
+			return res.status(404).json(createErrorResponse(MESSAGE.USER_NOT_FOUND, CONSTANTS.ERROR_TYPES.DATA_NOT_FOUND));
+		}
+
+		newPassword = await commonFunction.generateHash(req.body.newPassword);
+
+		console.log(newPassword, 'kdkkdkdkdkdkdkdkkdk');
+		await userService.findOneAndUpdateUser({ _id: userId }, { $set: { password: newPassword } });
+
+		return res.status(200).json(createSuccessResponse(MESSAGES.PASSWORD_UPDATED_SUCCESSFULLY))
+	} catch (error) {
+		return res.status(500).json(createErrorResponse(MESSAGES.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR))
+	}
+}
 
 userController.forgotPassword = async (req, res) => {
-  try {
+	try {
 
-    const user = await userService.findOneUser({ email: req.body.email, isDeleted: { $ne: true }, isVerified: true });
-    if (!user) {
-      return res.status(404).json(createErrorResponse(MESSAGE.USER_NOT_FOUND, CONSTANTS.ERROR_TYPES.DATA_NOT_FOUND));
-    }
+		const user = await userService.findOneUser({ email: req.body.email, isDeleted: { $ne: true }, isVerified: true });
+		if (!user) {
+			return res.status(404).json(createErrorResponse(MESSAGE.USER_NOT_FOUND, CONSTANTS.ERROR_TYPES.DATA_NOT_FOUND));
+		}
 
-	let otp = commonFunction.generateOtp();
-	await sessionService.findOneAndUpdateSession({ userId: user._id }, { $set: { token: otp, tokenType: CONSTANTS.TOKEN_TYPE.OTP } }, { upsert: true })
+		let otp = commonFunction.generateOtp();
+		await sessionService.findOneAndUpdateSession({ userId: user._id }, { $set: { token: otp, tokenType: CONSTANTS.TOKEN_TYPE.OTP } }, { upsert: true })
 
-	const data = { email: user.email, subject: 'Otp for the email verification', message: `Your Otp for the email verification is ${otp}` };
-	req.body.data = data;
-	await commonFunction.sendEmail(req, res);
-    return res.status(200).json(createSuccessResponse(MESSAGE.OTP_SENT_SUCCESSFULLY));
-  } catch (error) {
-    console.log(error, 'error');
-    return res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
-  }
+		const data = { email: user.email, subject: 'Otp for the forgot password', message: `Your Otp for the forgot password is ${otp}` };
+		req.body.data = data;
+		await commonFunction.sendEmail(req, res);
+		return res.status(200).json(createSuccessResponse(MESSAGE.OTP_SENT_SUCCESSFULLY));
+	} catch (error) {
+		console.log(error, 'error');
+		return res.status(500).json(createErrorResponse(MESSAGE.INTERNAL_SERVER_ERROR, CONSTANTS.ERROR_TYPES.INTERNAL_SERVER_ERROR));
+	}
 };
 
 userController.sendOtp = async (req, res) => {

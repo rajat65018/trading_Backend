@@ -19,7 +19,7 @@ userRoute.delete('/user', validateJoiSchema(joiSchema.deleteUserSchema), userAut
 
 userRoute.put('/v1/user/password/change', validateJoiSchema(joiSchema.changePasswordSchema), userAuthentication, userController.changePassword);
 
-userRoute.put('/v1/user/password/reset', validateJoiSchema(joiSchema.changePasswordSchema), userAuthentication, userController.changePassword);
+userRoute.put('/v1/user/password/reset', validateJoiSchema(joiSchema.resetPassword), userAuthentication,userController.resetPassword);
 
 userRoute.post('/v1/user/password/forgot', validateJoiSchema(joiSchema.passwordForgotSchema), userController.forgotPassword);
 
