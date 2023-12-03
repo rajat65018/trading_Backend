@@ -18,4 +18,13 @@ userServices.findOneAndDeleteUser = async(criteria) => {
     return await userModel.findOneAndDelete(criteria);
 }
 
+userServices.findOneUserWithStrategy=async(criteria,projectionQuery)=>{
+    return await userModel.findOne(criteria,projectionQuery).populate({
+        path:'strategyId',
+        populate:{
+            path:'legs'
+        }
+    });
+}
+
 module.exports=userServices;

@@ -3,6 +3,8 @@ const express = require('express');
 const dbConnect = require('./app/startup/dbConnect');
 const { PORT } = require('./config');
 const userRoute = require('./app/router/userRoutes');
+const strategyRoutes = require('./app/router/strategyRoutes');
+const legRoute = require('./app/router/legRoutes');
 
 const app = express();
 app.use(require('cors')());
@@ -14,6 +16,10 @@ app.use((req, res, next) => {
 })
 
 app.use(userRoute);
+
+app.use(strategyRoutes);
+
+app.use(legRoute)
 
 
 dbConnect()

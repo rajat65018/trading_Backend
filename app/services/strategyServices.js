@@ -14,8 +14,8 @@ strategyServices.findOneAndDeleteStrategy = async (criteria) => {
     return await strategyModel.findOneAndDelete(criteria);
 }
 
-strategyServices.findOneAndUpdateStrategy = async (criteria, updateQuery) => {
-    return await strategyModel.findOneAndUpdate(criteria, updateQuery);
+strategyServices.findOneAndUpdateStrategy = async (criteria, projection) => {
+    return await strategyModel.findOneAndUpdate(criteria, projection);
 }
 
 module.exports = strategyServices;

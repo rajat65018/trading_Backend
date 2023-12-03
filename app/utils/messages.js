@@ -17,6 +17,10 @@ const MESSAGES={
     OTP_SENT_SUCCESSFULLY: 'Otp sent successfully',
     INVALID_OTP: 'Invalid Otp',
     OTP_VERIFIED_SUCCESSFULLY: 'Otp verified successfully',
+    STRATEGY_CREATED:'Strategy created successfully',
+    LEG_CREATED: 'Leg added successfully',
+    STRATEGY_UPDATED: 'Strategy updated successfully',
+    STRATEGY_DELETED:'Strategy deleted successfully',
 }
 
 module.exports=MESSAGES;

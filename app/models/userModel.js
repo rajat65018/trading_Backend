@@ -13,7 +13,8 @@ const userSchema = new mongoose.Schema({
     addressLine1: { type: String },
     city: { type: String },
     postalCode: { type: Number },
-    isDeleted: { type: Boolean }
+    isDeleted: { type: Boolean },
+    strategyId:[{type:mongoose.Types.ObjectId,ref:'strategy'}]
 }, { timestamps: true });
 
 const userModel = mongoose.model('user', userSchema);

@@ -1,10 +1,10 @@
 const mongoose = require('mongoose');
 const CONSTANTS = require('../utils/constants');
-const strategySchema = mongoose.Schema({
+const strategySchema =new mongoose.Schema({
     sid: {
-        type: Number,
-        unique: true,
-        type: mongoose.Types.ObjectId
+        // type: Number,
+        type: mongoose.Types.ObjectId,
+        unique: true
     },
     index_type: {
         type: String,
@@ -27,7 +27,7 @@ const strategySchema = mongoose.Schema({
         // required: true
     },
     move_sl_to_cost: {
-        type: true,
+        type: Boolean,
         default:CONSTANTS.STRATEGYTYPES.MOVE_SL_TO_COST.FALSE
         // required: true
     },
@@ -117,7 +117,8 @@ const strategySchema = mongoose.Schema({
     match_premium_value: {
         type: Number,
         required: true
-    }
+    },
+    legs:[{type:mongoose.Types.ObjectId,ref:"leg"}]
 });
 
 const strategyModel = mongoose.model('strategy', strategySchema);
